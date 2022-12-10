@@ -1,2 +1,6 @@
 # cache
-code/.ipynb_checkpoints/
+*.ipynb_checkpoints
+__pycache__
+
+# data
+data/
