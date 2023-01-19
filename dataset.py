@@ -14,12 +14,6 @@ IMG_DIM = (224, 224)
 DATA_DIR = os.path.join(os.getcwd(), 'data')
 if not os.path.exists(DATA_DIR):
     os.makedirs(DATA_DIR)
-FO_DIR = os.path.join(DATA_DIR, 'fiftyone')
-if not os.path.exists(FO_DIR):
-    os.makedirs(FO_DIR)
-TF_DIR = os.path.join(DATA_DIR, 'tensorflow')
-if not os.path.exists(TF_DIR):
-    os.makedirs(TF_DIR)
     
 def load_fiftyone_dataset(datasetType):
     # set max_samples
@@ -42,7 +36,7 @@ def load_fiftyone_dataset(datasetType):
         label_types="classifications",
         classes=["Vehicle registration plate"],
         max_samples=max_samples,
-        dataset_dir=FO_DIR,
+        dataset_dir=DATA_DIR,
         only_matching=True
     )
     dataset_2 = fiftyone.zoo.load_zoo_dataset(
@@ -52,7 +46,7 @@ def load_fiftyone_dataset(datasetType):
         label_types="classifications",
         classes=["Dog", "Cat", "Apple"],
         max_samples=max_samples,
-        dataset_dir=FO_DIR,
+        dataset_dir=DATA_DIR,
         only_matching=True
     )
     dataset_1.add_samples(dataset_2)
@@ -80,23 +74,23 @@ def load_datasetLabels_into_npArray(datasetView):
 #numpy as TFDataset:
 #https://www.tensorflow.org/guide/data#reading_input_data
 #https://www.tensorflow.org/tutorials/load_data/numpy
-
 def load_imageTensor(path):
     image_raw = tf.io.read_file(path)
-    
-    array_to_img(image_raw)
-    print(image_raw.shape)
-    
     image_tensor = tf.image.decode_jpeg(image_raw, channels=3)
     return image_tensor
 
 def load_datasetImages_and_Labels_into_DataLoader(datasetView, labels):
+    #get all filepaths
     all_image_paths = []
     for image in datasetView:
         all_image_paths.append(image.filepath)
         
+    #set label names = index to labels (0 = Others, 1 = Vehicle registration plate)
+    label_names = ['Others', 'Vehicle registration plate']
+    
+    #load tensorflow datasets
     path_ds = tf.data.Dataset.from_tensor_slices(all_image_paths)
     image_ds = path_ds.map(load_imageTensor)
     label_ds = tf.data.Dataset.from_tensor_slices(tf.cast(labels, tf.int64))
     image_label_ds = tf.data.Dataset.zip((image_ds, label_ds))
-    return DataLoader(image_label_ds, len(all_image_paths), ['Vehicle registration plate'])
+    return DataLoader(image_label_ds, len(all_image_paths), label_names)
