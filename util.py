@@ -47,7 +47,6 @@ def load_fiftyone_dataset(datasetType):
     
     return dataset_1
 
-
 #code is taken from https://gist.github.com/dipanjanS/4bcf226ae5bb5b1098f13e0dc5527ab7#file-tl_9-py
 def plot_model_history(history, epochs=30):
     f, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 4))
