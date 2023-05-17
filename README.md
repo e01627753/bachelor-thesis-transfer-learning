@@ -11,5 +11,6 @@
   \
   The resulting models have been quantized to be compatible with edge devices and increase the inference speed. The models have been attached to the project and can be downloaded from repository/models.\
   \
-  At the end of the bachelor thesis both methods have been analyzed in terms of efficiency and effectiveness. In this context comparing efficiency means measuring inference speed plus power consumption on 3 different edge devices and comparing the storage space needed for the quantized models. Effectiveness, on the other hand, will be illustrated by evaluating accuracy, overfitting and ROC curves.\
+  At the end of the bachelor thesis both methods have been analyzed in terms of efficiency and effectiveness. In this context comparing efficiency means measuring inference speed plus power consumption on 3 different edge devices (e.g. Rasperry Pi 4) and comparing the storage space needed for the quantized models. Effectiveness, on the other hand, will be illustrated by evaluating accuracy, overfitting and ROC curves.\
+  To be able to compare and execute the models on the edge devices a seperate Python script (execute_models.py) has been implemented.\
   The results have been summarized in the thesis itself (bachelor-thesis.pdf).
