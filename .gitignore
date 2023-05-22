@@ -7,3 +7,4 @@ data/
 
 # raw model
 models/model.h5
+models/model_adv.h5
