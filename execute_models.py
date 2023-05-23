@@ -1,39 +1,15 @@
 # -*- coding: utf-8 -*-
 
 ########################################################################
-######### download, install and import required libraries
+######### import required libraries
 ########################################################################
-import importlib
-import subprocess
 import sys
 import os
-
-libs_to_install = []
-libs_to_check = ["argparse", "requests", "numpy", "time", "PIL", "tensorflow"]
-
-for lib in libs_to_check:
-    try:
-        importlib.import_module(lib)
-    except ImportError:
-        libs_to_install.append(lib)
-
-if libs_to_install:
-    print("INFO: Downloading and installing libraries: " + ', '.join(libs_to_install))
-    try:
-        subprocess.check_call(["pip", "install"] + libs_to_install)
-    except Exception as e:
-        print("ERROR: Could not install following libraries: ", str(e))
-        print("INFO: Consider installing the libs manually by executing following command: pip3 install <package-name>")
-        sys.exit(1)
-        
-# import libraries
 import argparse
-import requests
 import numpy as np
 import time
 from PIL import Image
 import tensorflow as tf
-from tensorflow.keras.utils import array_to_img, img_to_array, load_img
 
 ########################################################################
 ######### define ArgumentParser, add -b option and parse arguments
@@ -88,24 +64,24 @@ print("X_input.shape:", X_input.shape)
 ########################################################################
 if (bit == 8): # 8bit int model
     print("INFO: Loading 8 bit model:", model_name)
-    interpr = tf.lite.Interpreter(model_path="models/" + model_name)
-    interpr.allocate_tensors()
-    input_details = interpr.get_input_details()
-    output_details = interpr.get_output_details()
+    interpreter = tf.lite.Interpreter(model_path="models/" + model_name + ".tflite")
+    interpreter.allocate_tensors()
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
     
 elif (bit == 16): # 16bit float model
     print("INFO: Loading 16 bit model:", model_name)
-    interpr = tf.lite.Interpreter(model_path="models/" + model_name)
-    interpr.allocate_tensors()
-    input_details = interpr.get_input_details()
-    output_details = interpr.get_output_details()
+    interpreter = tf.lite.Interpreter(model_path="models/" + model_name + ".tflite")
+    interpreter.allocate_tensors()
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
     
 else: # 32bit float model
     print("INFO: Loading 32 bit model:", model_name)
-    interpr = tf.lite.Interpreter(model_path="models/" + model_name)
-    interpr.allocate_tensors()
-    input_details = interpr.get_input_details()
-    output_details = interpr.get_output_details()
+    interpreter = tf.lite.Interpreter(model_path="models/" + model_name + ".tflite")
+    interpreter.allocate_tensors()
+    input_details = interpreter.get_input_details()
+    output_details = interpreter.get_output_details()
     
 print("INFO: Input details:")
 print(input_details)
@@ -116,7 +92,6 @@ print(output_details)
 ######### run inference and return speed measure
 ########################################################################
 input_type = input_details[0]['dtype']
-
 if (bit == 8): # rescale input data
     input_scale, input_zero_point = input_details[0]['quantization']
     print("Input scale:", input_scale)
@@ -124,7 +99,7 @@ if (bit == 8): # rescale input data
     X_inf_test = (X_input / input_scale) + input_zero_point
 else:
     X_inf_test = X_input
-
+    
 # convert to NumPy array of expected type
 X_inf_test = X_inf_test.astype(input_type)
 
@@ -132,28 +107,20 @@ duration = 0.0
 output_lst = np.zeros((X_inf_test.shape[0], 2))
 for i in range(X_inf_test.shape[0]):
     img = np.expand_dims(X_inf_test[i], axis=0)
-    interpr.set_tensor(input_details[0]['index'], img)
+    interpreter.set_tensor(input_details[0]['index'], img)
 
     # run inference
     start_time = time.time()
-    interpr.invoke()
+    interpreter.invoke()
     end_time = time.time()
     duration += end_time-start_time
 
     # output_details[0]['index'] = the index which provides the input
-    output = interpr.get_tensor(output_details[0]['index'])
-    
+    output = interpreter.get_tensor(output_details[0]['index'])
     if (bit == 8): # rescale output data
         output_scale, output_zero_point = output_details[0]['quantization']
-
-        print("INFO: Raw inference output scores: ", output)
-        print("INFO: Output scale: ", output_scale)
-        print("INFO: Output zero point: ", output_zero_point)
-        
         output_lst[i] = output_scale * (output.astype(np.float32) - output_zero_point)
 
 avg_inf_speed = duration / X_inf_test.shape[0]
-
-print("INFO: Inference output: ", output_lst[0])
 print("INFO: Duration in seconds: ", duration)
 print("INFO: Average inference speed of ", bit, " bit model: ", avg_inf_speed, " seconds per image")
