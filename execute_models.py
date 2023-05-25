@@ -11,6 +11,10 @@ import time
 from PIL import Image
 import tensorflow as tf
 
+import pandas as pd
+from pymeas.device import GPMDevice
+from pymeas.output import CsvOutput
+
 ########################################################################
 ######### define ArgumentParser, add -b option and parse arguments
 ########################################################################
@@ -93,6 +97,15 @@ print(input_details)
 print("INFO: Output details:")
 print(output_details)
 
+
+########################################################################
+######### connect to power meter
+########################################################################
+#https://gitlab.com/xyz-user/self-adaptive-moop/-/blob/main/src/measure_energy_consumption.py
+power_meter_device = GPMDevice(host="192.168.167.90")
+power_meter_device.connect()
+measurement_thread = power_meter_device.start_power_capture()
+
 ########################################################################
 ######### run inference and return speed measure
 ########################################################################
@@ -110,22 +123,43 @@ X_inf_test = X_inf_test.astype(input_type)
 
 duration = 0.0
 output_lst = np.zeros((X_inf_test.shape[0], 2))
+# measure power consumption
+measurement_thread = power_meter_device.start_power_capture()
 for i in range(X_inf_test.shape[0]):
     img = np.expand_dims(X_inf_test[i], axis=0)
     interpreter.set_tensor(input_details[0]['index'], img)
 
     # run inference
-    start_time = time.time()
+    start_time = time.perf_counter()
     interpreter.invoke()
-    end_time = time.time()
+    end_time = time.perf_counter()
     duration += end_time-start_time
+    print('%.1fms' % ((end_time-start_time) * 1000))
 
-    # output_details[0]['index'] = the index which provides the input
+    # output_details[0]['index']
     output = interpreter.get_tensor(output_details[0]['index'])
     if (bit == 8): # rescale output data
         output_scale, output_zero_point = output_details[0]['quantization']
         output_lst[i] = output_scale * (output.astype(np.float32) - output_zero_point)
+    
+    #TODO (in an own script not connecting to power_meter)
+    #predicted_label = np.argmax(output()[0])
+    #prediction.append(predicted_label)
 
+# stop measuring power consumption
+power = power_meter_device.stop_power_capture(measurement_thread)
+power_meter_device.disconnect()
+data = [{'timestamp': key, 'value': value} for key, value in power.items()]
+CsvOutput.save(f"power_measures/{model_name}.csv", field_names=['timestamp', 'value'], data=data)
+df = pd.DataFrame(power.items(), columns=['timestamp', 'value'])
 avg_inf_speed = duration / X_inf_test.shape[0]
+
 print("INFO: Duration in seconds: ", duration)
 print("INFO: Average inference speed of ", bit, " bit model: ", avg_inf_speed, " seconds per image")
+
+#TODO
+#output = interpreter.tensor(output_index)
+# Comparing prediction results with ground truth labels to calculate accuracy.
+#prediction = np.array(prediction)
+#accuracy = (prediction == test_labels).mean()
+#print("INFO: Accuracy of quantized model '" + model_name + "' is: " + accuracy)
