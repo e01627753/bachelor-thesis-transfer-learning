@@ -62,6 +62,11 @@ print("X_input.shape:", X_input.shape)
 ########################################################################
 ######### load transfer learning models
 ########################################################################
+# https://www.tensorflow.org/lite/api_docs/java/org/tensorflow/lite/Interpreter#getOutputTensor(int)
+# https://www.tensorflow.org/api_docs/python/tf/lite/Interpreter
+# https://www.tensorflow.org/lite/guide/inference#load_and_run_a_model_in_python
+# https://forum.edgeimpulse.com/t/solved-how-to-run-inference-with-tflite-model-file-from-python-win10/3728
+
 if (bit == 8): # 8bit int model
     print("INFO: Loading 8 bit model:", model_name)
     interpreter = tf.lite.Interpreter(model_path="models/" + model_name + ".tflite")
