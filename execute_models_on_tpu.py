@@ -1,3 +1,10 @@
+'''
+Syntax for script execution:
+python<optionally the version of your python> execute_models_on_tpu.py -m <model name of edge tpu compiled model>
+
+EXAMPLE: python3 execute_models_on_tpu.py -m tl_model_8int_edgetpu
+'''
+
 ########################################################################
 ######### import required libraries
 ########################################################################
@@ -9,9 +16,12 @@ import time
 from PIL import Image
 from pycoral.adapters import common
 from pycoral.utils.edgetpu import make_interpreter
-# script has been taken from:
-# https://github.com/google-coral/pycoral/blob/master/examples/classify_image.py
-# and adapted for the porpuse of this bachelor thesis
+'''
+script has been taken from:
+https://github.com/google-coral/pycoral/blob/master/examples/classify_image.py
+and adapted for the porpuse of this bachelor thesis. Other references:
+https://coral.ai/docs/accelerator/get-started/#3-run-a-model-on-the-edge-tpu
+'''
 
 import pandas as pd
 from pymeas.device import GPMDevice
@@ -30,7 +40,7 @@ else:
     model_name = args.m
 
 ########################################################################
-######### load transfer learning model
+######### load quantized tensorflow lite models
 ########################################################################
 print("INFO: Loading 8 bit model:", model_name)
 interpreter = make_interpreter("models/" + model_name + ".tflite")

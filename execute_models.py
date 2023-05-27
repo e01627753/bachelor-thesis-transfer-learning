@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+'''
+Syntax for script execution:
+python<optionally the version of your python> execute_models.py -b <number of bits of the model> -m <model name>
+
+EXAMPLE: python3 execute_models.py -b 16 -m tl_model_16f
+'''
 
 ########################################################################
 ######### import required libraries
@@ -64,7 +70,7 @@ for i, image_file in enumerate(image_files):
 print("X_input.shape:", X_input.shape)
 
 ########################################################################
-######### load transfer learning models
+######### load quantized tensorflow lite models
 ########################################################################
 # https://www.tensorflow.org/lite/api_docs/java/org/tensorflow/lite/Interpreter#getOutputTensor(int)
 # https://www.tensorflow.org/api_docs/python/tf/lite/Interpreter
@@ -136,15 +142,11 @@ for i in range(X_inf_test.shape[0]):
     duration += end_time-start_time
     print('%.1fms' % ((end_time-start_time) * 1000))
 
-    # output_details[0]['index']
+    # prediction
     output = interpreter.get_tensor(output_details[0]['index'])
     if (bit == 8): # rescale output data
         output_scale, output_zero_point = output_details[0]['quantization']
         output_lst[i] = output_scale * (output.astype(np.float32) - output_zero_point)
-    
-    #TODO (in an own script not connecting to power_meter)
-    #predicted_label = np.argmax(output()[0])
-    #prediction.append(predicted_label)
 
 # stop measuring power consumption
 power = power_meter_device.stop_power_capture(measurement_thread)
@@ -152,14 +154,7 @@ power_meter_device.disconnect()
 data = [{'timestamp': key, 'value': value} for key, value in power.items()]
 CsvOutput.save(f"power_measures/{model_name}.csv", field_names=['timestamp', 'value'], data=data)
 df = pd.DataFrame(power.items(), columns=['timestamp', 'value'])
-avg_inf_speed = duration / X_inf_test.shape[0]
 
+avg_inf_speed = duration / X_inf_test.shape[0]
 print("INFO: Duration in seconds: ", duration)
 print("INFO: Average inference speed of ", bit, " bit model: ", avg_inf_speed, " seconds per image")
-
-#TODO
-#output = interpreter.tensor(output_index)
-# Comparing prediction results with ground truth labels to calculate accuracy.
-#prediction = np.array(prediction)
-#accuracy = (prediction == test_labels).mean()
-#print("INFO: Accuracy of quantized model '" + model_name + "' is: " + accuracy)
