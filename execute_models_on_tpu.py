@@ -74,7 +74,6 @@ print("X_input.shape:", X_input.shape)
 ########################################################################
 power_meter_device = GPMDevice(host="192.168.167.90")
 power_meter_device.connect()
-measurement_thread = power_meter_device.start_power_capture()
 
 ########################################################################
 ######### run inference and return speed measure
